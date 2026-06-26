@@ -33,3 +33,37 @@ def test_get_static_text_items():
     assert h1_child.get("class") == "docTitle"
     assert h1_child.text == "Title"
 
+def test_generate_audio_pool_node():
+    from src.core.xml_generator import generate_audio_pool_node, format_duration_hhmmss_mmm
+    
+    # Test helper first
+    assert format_duration_hhmmss_mmm(10000.0) == "00:00:10.000"
+    assert format_duration_hhmmss_mmm(90000.0) == "00:01:30.000"
+    assert format_duration_hhmmss_mmm(4262061.0) == "01:11:02.061"
+    
+    audio_data = [
+        {"filename": "001.wav", "absolute_path": "/path/to/001.wav", "duration": 10000.0},
+        {"filename": "002.wav", "absolute_path": "/path/to/002.wav", "duration": 90000.0}
+    ]
+    
+    node = generate_audio_pool_node(audio_data, "magazine", "/output")
+    assert node.tag == "AudioPool"
+    assert node.get("Path") == "magazine Files"
+    assert node.get("Location") == "/output/magazine Files"
+    
+    files = list(node)
+    assert len(files) == 2
+    
+    assert files[0].tag == "File"
+    assert files[0].get("Id") == "1"
+    assert files[0].get("Name") == "001.wav"
+    assert files[0].get("OriginalPath") == "/path/to/001.wav"
+    assert files[0].get("Duration") == "00:00:10.000"
+    
+    assert files[1].tag == "File"
+    assert files[1].get("Id") == "2"
+    assert files[1].get("Name") == "002.wav"
+    assert files[1].get("OriginalPath") == "/path/to/002.wav"
+    assert files[1].get("Duration") == "00:01:30.000"
+
+

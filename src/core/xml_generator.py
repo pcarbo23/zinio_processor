@@ -105,3 +105,63 @@ def get_static_text_items() -> ET.Element:
     """
     return ET.fromstring(STATIC_TEXT_ITEMS_XML)
 
+
+def format_duration_hhmmss_mmm(ms: float) -> str:
+    """
+    Converts duration in milliseconds to HH:MM:SS.mmm format.
+    
+    Args:
+        ms: Duration in milliseconds.
+        
+    Returns:
+        Formatted time string (HH:MM:SS.mmm).
+    """
+    total_seconds = int(ms // 1000)
+    milliseconds = int(round(ms % 1000))
+    if milliseconds >= 1000:
+        total_seconds += 1
+        milliseconds -= 1000
+        
+    hours = total_seconds // 3600
+    minutes = (total_seconds // 60) % 60
+    seconds = total_seconds % 60
+    
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+
+
+def generate_audio_pool_node(audio_data: list[dict], project_name: str, output_dir: str) -> ET.Element:
+    """
+    Dynamically generates the <AudioPool> XML node for an .nhsx file.
+    
+    Args:
+        audio_data: A list of dicts containing 'filename', 'absolute_path', and 'duration' (in ms).
+        project_name: The name of the project.
+        output_dir: The target output directory.
+        
+    Returns:
+        An xml.etree.ElementTree.Element representing the <AudioPool> node.
+    """
+    audio_files_dir = os.path.join(output_dir, f"{project_name} Files")
+    audio_pool = ET.Element("AudioPool", {
+        "Path": f"{project_name} Files",
+        "Location": audio_files_dir
+    })
+    
+    for idx, item in enumerate(audio_data, start=1):
+        filename = item["filename"]
+        abs_path = item["absolute_path"]
+        duration_ms = item["duration"]
+        
+        duration_str = format_duration_hhmmss_mmm(duration_ms)
+        
+        ET.SubElement(audio_pool, "File", {
+            "Id": str(idx),
+            "Name": filename,
+            "OriginalPath": abs_path,
+            "Duration": duration_str,
+            "Leq": "-"
+        })
+        
+    return audio_pool
+
+
