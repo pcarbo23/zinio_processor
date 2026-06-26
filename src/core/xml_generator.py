@@ -165,3 +165,40 @@ def generate_audio_pool_node(audio_data: list[dict], project_name: str, output_d
     return audio_pool
 
 
+def generate_tracks_node(audio_data: list[dict]) -> ET.Element:
+    """
+    Generates the <Tracks> XML node containing a single <Track Name="Narration">
+    populated with child <Region> nodes for each audio file.
+    
+    Args:
+        audio_data: List of dicts containing 'filename' and 'duration' (in ms).
+        
+    Returns:
+        An xml.etree.ElementTree.Element representing the <Tracks> node.
+    """
+    from src.utils.time_formatter import format_hindenburg_time
+    
+    tracks = ET.Element("Tracks")
+    track = ET.SubElement(tracks, "Track", {"Name": "Narration"})
+    
+    cumulative_seconds = 0.0
+    for idx, item in enumerate(audio_data, start=1):
+        filename = item["filename"]
+        # Use filename without extension as Region Name
+        region_name, _ = os.path.splitext(filename)
+        duration_sec = item["duration"] / 1000.0
+        
+        region_attrs = {
+            "Ref": str(idx),
+            "Name": region_name,
+            "Start": format_hindenburg_time(cumulative_seconds),
+            "Length": format_hindenburg_time(duration_sec)
+        }
+        
+        ET.SubElement(track, "Region", region_attrs)
+        cumulative_seconds += duration_sec
+        
+    return tracks
+
+
+

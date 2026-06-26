@@ -66,4 +66,43 @@ def test_generate_audio_pool_node():
     assert files[1].get("OriginalPath") == "/path/to/002.wav"
     assert files[1].get("Duration") == "00:01:30.000"
 
+def test_generate_tracks_node():
+    from src.core.xml_generator import generate_tracks_node
+    
+    audio_data = [
+        {"filename": "001 docTitle Title.wav", "absolute_path": "/path/to/001.wav", "duration": 10000.0},
+        {"filename": "002 docAuthor Author Name.wav", "absolute_path": "/path/to/002.wav", "duration": 5000.0},
+        {"filename": "004 h1 Section One.wav", "absolute_path": "/path/to/004.wav", "duration": 60000.0}
+    ]
+    
+    node = generate_tracks_node(audio_data)
+    assert node.tag == "Tracks"
+    
+    tracks = list(node)
+    assert len(tracks) == 1
+    assert tracks[0].tag == "Track"
+    assert tracks[0].get("Name") == "Narration"
+    
+    regions = list(tracks[0])
+    assert len(regions) == 3
+    
+    assert regions[0].tag == "Region"
+    assert regions[0].get("Ref") == "1"
+    assert regions[0].get("Name") == "001 docTitle Title"
+    assert regions[0].get("Start") == "00.000"
+    assert regions[0].get("Length") == "10.000"
+    
+    assert regions[1].tag == "Region"
+    assert regions[1].get("Ref") == "2"
+    assert regions[1].get("Name") == "002 docAuthor Author Name"
+    assert regions[1].get("Start") == "10.000"
+    assert regions[1].get("Length") == "05.000"
+    
+    assert regions[2].tag == "Region"
+    assert regions[2].get("Ref") == "3"
+    assert regions[2].get("Name") == "004 h1 Section One"
+    assert regions[2].get("Start") == "15.000"
+    assert regions[2].get("Length") == "01:00.000"
+
+
 
