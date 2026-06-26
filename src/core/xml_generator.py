@@ -32,3 +32,76 @@ def write_boilerplate_css(output_dir: str) -> str:
     with open(css_path, "w", encoding="utf-8") as f:
         f.write(DAISY_BOILERPLATE_CSS)
     return css_path
+
+
+import xml.etree.ElementTree as ET
+
+STATIC_TEXT_ITEMS_XML = """<TextItems>
+  <TextItem Name="Title" State="1" Key="1">
+    <h1 class="docTitle">Title</h1>
+  </TextItem>
+  <TextItem Name="Author" State="1" Key="2">
+    <h1 class="docAuthor">Author(s)</h1>
+  </TextItem>
+  <TextItem Name="Annotation" State="1" Key="3">
+    <h1 class="annotation">Library of Congress Annotation</h1>
+  </TextItem>
+  <TextItem Name="Close" State="1" Key="4">
+    <h1 class="close">Close</h1>
+  </TextItem>
+  <TextItem Name="H1" State="1" Key="5">
+    <h1>Header 1</h1>
+  </TextItem>
+  <TextItem Name="H2" State="1" Key="6">
+    <h2>Header 2</h2>
+  </TextItem>
+  <TextItem Name="H3" State="1" Key="7">
+    <h3>Header 3</h3>
+  </TextItem>
+  <TextItem Name="H4" Key="8">
+    <h4>Header 4</h4>
+  </TextItem>
+  <TextItem Name="H5" Key="9">
+    <h5>Header 5</h5>
+  </TextItem>
+  <TextItem Name="H6" Key="0">
+    <h6>Header 6</h6>
+  </TextItem>
+  <TextItem Name="Reader's Note" State="1">
+    <div class="prodnote">
+      <p>Reader's Note</p>
+    </div>
+  </TextItem>
+  <TextItem Name="Segment" State="1">
+    <p class="segment">Segment</p>
+  </TextItem>
+  <TextItem Name="Note-Ref" State="1">
+    <a class="noteref">*</a>
+  </TextItem>
+  <TextItem Name="Note-Content" State="1">
+    <div class="note">
+      <p>Note content</p>
+    </div>
+  </TextItem>
+  <TextItem Name="Sidebar" State="1">
+    <div class="sidebar">
+      <p>Sidebar</p>
+    </div>
+  </TextItem>
+  <TextItem Name="Page" State="1">
+    <span class="pagenum">#</span>
+  </TextItem>
+  <TextItem Name="Line" State="0">
+    <span class="linenum">#</span>
+  </TextItem>
+</TextItems>"""
+
+def get_static_text_items() -> ET.Element:
+    """
+    Returns the static <TextItems> XML element tree block.
+    
+    Returns:
+        An xml.etree.ElementTree.Element representing the root of the TextItems block.
+    """
+    return ET.fromstring(STATIC_TEXT_ITEMS_XML)
+
