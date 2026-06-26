@@ -201,4 +201,110 @@ def generate_tracks_node(audio_data: list[dict]) -> ET.Element:
     return tracks
 
 
+def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: str) -> str:
+    """
+    Generates the structural Document.xhtml file using xml.etree.ElementTree.
+    
+    Args:
+        audio_data: List of dicts containing 'filename'.
+        metadata: Dict containing project metadata.
+        output_dir: The target output directory where Document.xhtml will be written.
+        
+    Returns:
+        The absolute path to the generated Document.xhtml file.
+    """
+    import re
+    
+    ET.register_namespace("", "http://www.w3.org/1999/xhtml")
+    ET.register_namespace("epub", "http://www.idpf.org/2007/ops")
+    
+    html = ET.Element("html", {
+        "xmlns": "http://www.w3.org/1999/xhtml",
+        "xmlns:epub": "http://www.idpf.org/2007/ops",
+        "xml:lang": "en",
+        "lang": "en"
+    })
+    
+    head = ET.SubElement(html, "head")
+    ET.SubElement(head, "title").text = metadata.get("title", "")
+    ET.SubElement(head, "meta", {"name": "dc:title", "content": metadata.get("title", "")})
+    ET.SubElement(head, "meta", {"name": "dc:creator", "content": metadata.get("creator", "")})
+    ET.SubElement(head, "meta", {"name": "dc:identifier", "content": metadata.get("identifier", "")})
+    ET.SubElement(head, "meta", {"name": "dc:format", "content": " "})
+    ET.SubElement(head, "meta", {"name": "dc:publisher", "content": metadata.get("publisher", "National Library Service for the Blind and Print Disabled, Library of Congress")})
+    ET.SubElement(head, "meta", {"name": "ncc:generator", "content": metadata.get("generator", "Hindenburg ABC Studio 1.60")})
+    ET.SubElement(head, "link", {"rel": "stylesheet", "type": "text/css", "href": "style.css"})
+    ET.SubElement(head, "meta", {"charset": "UTF-8"})
+    
+    body = ET.SubElement(html, "body")
+    
+    id_counter = 1
+    last_section = None
+    
+    for item in audio_data:
+        filename = item["filename"]
+        base_name, _ = os.path.splitext(filename)
+        
+        # Remove 3-digit prefix (e.g. "003 ")
+        clean_name = re.sub(r"^\d{3}\s+", "", base_name).strip()
+        
+        if "docTitle" in clean_name:
+            title_text = clean_name.replace("docTitle", "").strip()
+            ET.SubElement(body, "h1", {
+                "id": f"hix{id_counter:05d}",
+                "class": "docTitle"
+            }).text = title_text
+            id_counter += 1
+        elif "docAuthor" in clean_name:
+            author_text = clean_name.replace("docAuthor", "").strip()
+            ET.SubElement(body, "h1", {
+                "id": f"hix{id_counter:05d}",
+                "class": "docAuthor"
+            }).text = author_text
+            id_counter += 1
+        elif "annotation" in clean_name:
+            annot_text = clean_name.replace("annotation", "").strip()
+            ET.SubElement(body, "h1", {
+                "id": f"hix{id_counter:05d}",
+                "class": "annotation"
+            }).text = annot_text
+            id_counter += 1
+        else:
+            # Check for section-article separators: en-dash, em-dash, or standard hyphen
+            parts = re.split(r"\s+[\u2013\u2014\-]\s+", clean_name, maxsplit=1)
+            if len(parts) == 2:
+                section_title = parts[0].strip()
+                article_title = parts[1].strip()
+                
+                if section_title != last_section:
+                    ET.SubElement(body, "h1", {
+                        "id": f"hix{id_counter:05d}"
+                    }).text = section_title
+                    id_counter += 1
+                    last_section = section_title
+                    
+                ET.SubElement(body, "h2", {
+                    "id": f"hix{id_counter:05d}",
+                    "class": "article"
+                }).text = article_title
+                id_counter += 1
+            else:
+                # Standalone article
+                ET.SubElement(body, "h1", {
+                    "id": f"hix{id_counter:05d}",
+                    "class": "article"
+                }).text = clean_name
+                id_counter += 1
+                
+    os.makedirs(output_dir, exist_ok=True)
+    xhtml_path = os.path.join(output_dir, "Document.xhtml")
+    
+    # Write file out
+    tree = ET.ElementTree(html)
+    tree.write(xhtml_path, encoding="UTF-8", xml_declaration=True)
+    
+    return xhtml_path
+
+
+
 
