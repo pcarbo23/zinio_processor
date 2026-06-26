@@ -178,6 +178,49 @@ def test_generate_document_xhtml():
         assert elements[4] == {"tag": "h2", "id": "hix00005", "class": "article", "text": "Asia"}
         assert elements[5] == {"tag": "h1", "id": "hix00006", "class": "article", "text": "Standalone Article"}
 
+def test_generate_nav_points_node():
+    from src.core.xml_generator import generate_nav_points_node
+    
+    audio_data = [
+        {"filename": "001 docTitle Title.wav", "duration": 10000.0},
+        {"filename": "002 docAuthor Author Name.wav", "duration": 5000.0},
+        {"filename": "003 World News – Europe.wav", "duration": 30000.0}
+    ]
+    
+    node = generate_nav_points_node(audio_data)
+    assert node.tag == "NavPoints"
+    
+    navs = list(node)
+    # 4 headings generated: Title, Author, World News (section), Europe (article).
+    # 2 navpoints each = 8 total navpoints.
+    assert len(navs) == 8
+    
+    # Assert they are grouped consecutively
+    # Title (hix00001) starts at 0.0s (00:00:00.000)
+    assert navs[0].get("Id") == "hix00001"
+    assert navs[0].get("Begin") == "00:00:00.000"
+    assert navs[1].get("Id") == "hix00001"
+    assert navs[1].get("Begin") == "00:00:03.000"
+    
+    # Author (hix00002) starts at 10.0s (00:00:10.000)
+    assert navs[2].get("Id") == "hix00002"
+    assert navs[2].get("Begin") == "00:00:10.000"
+    assert navs[3].get("Id") == "hix00002"
+    assert navs[3].get("Begin") == "00:00:13.000"
+    
+    # World News (hix00003) starts at 15.0s (00:00:15.000)
+    assert navs[4].get("Id") == "hix00003"
+    assert navs[4].get("Begin") == "00:00:15.000"
+    assert navs[5].get("Id") == "hix00003"
+    assert navs[5].get("Begin") == "00:00:18.000"
+    
+    # Europe (hix00004) starts at 15.0s (00:00:15.000)
+    assert navs[6].get("Id") == "hix00004"
+    assert navs[6].get("Begin") == "00:00:15.000"
+    assert navs[7].get("Id") == "hix00004"
+    assert navs[7].get("Begin") == "00:00:18.000"
+
+
 
 
 

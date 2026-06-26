@@ -201,6 +201,96 @@ def generate_tracks_node(audio_data: list[dict]) -> ET.Element:
     return tracks
 
 
+def _parse_headings(audio_data: list[dict]) -> list[dict]:
+    """
+    Parses structural heading information from audio_data sequentially.
+    
+    Returns:
+        List of dicts representing headings, each with id, tag, class, text, start_sec.
+    """
+    import re
+    
+    headings = []
+    id_counter = 1
+    last_section = None
+    cumulative_seconds = 0.0
+    
+    for item in audio_data:
+        filename = item["filename"]
+        duration_sec = (item.get("duration", 0.0) / 1000.0)
+        base_name, _ = os.path.splitext(filename)
+        clean_name = re.sub(r"^\d{3}\s+", "", base_name).strip()
+        
+        if "docTitle" in clean_name:
+            title_text = clean_name.replace("docTitle", "").strip()
+            headings.append({
+                "id": f"hix{id_counter:05d}",
+                "tag": "h1",
+                "class": "docTitle",
+                "text": title_text,
+                "start_sec": cumulative_seconds
+            })
+            id_counter += 1
+        elif "docAuthor" in clean_name:
+            author_text = clean_name.replace("docAuthor", "").strip()
+            headings.append({
+                "id": f"hix{id_counter:05d}",
+                "tag": "h1",
+                "class": "docAuthor",
+                "text": author_text,
+                "start_sec": cumulative_seconds
+            })
+            id_counter += 1
+        elif "annotation" in clean_name:
+            annot_text = clean_name.replace("annotation", "").strip()
+            headings.append({
+                "id": f"hix{id_counter:05d}",
+                "tag": "h1",
+                "class": "annotation",
+                "text": annot_text,
+                "start_sec": cumulative_seconds
+            })
+            id_counter += 1
+        else:
+            parts = re.split(r"\s+[\u2013\u2014\-]\s+", clean_name, maxsplit=1)
+            if len(parts) == 2:
+                section_title = parts[0].strip()
+                article_title = parts[1].strip()
+                
+                if section_title != last_section:
+                    headings.append({
+                        "id": f"hix{id_counter:05d}",
+                        "tag": "h1",
+                        "class": None,
+                        "text": section_title,
+                        "start_sec": cumulative_seconds
+                    })
+                    id_counter += 1
+                    last_section = section_title
+                    
+                headings.append({
+                    "id": f"hix{id_counter:05d}",
+                    "tag": "h2",
+                    "class": "article",
+                    "text": article_title,
+                    "start_sec": cumulative_seconds
+                })
+                id_counter += 1
+            else:
+                headings.append({
+                    "id": f"hix{id_counter:05d}",
+                    "tag": "h1",
+                    "class": "article",
+                    "text": clean_name,
+                    "start_sec": cumulative_seconds
+                })
+                id_counter += 1
+                
+        cumulative_seconds += duration_sec
+        
+    return headings
+
+
 def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: str) -> str:
     """
     Generates the structural Document.xhtml file using xml.etree.ElementTree.
@@ -213,8 +303,6 @@ def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: 
     Returns:
         The absolute path to the generated Document.xhtml file.
     """
-    import re
-    
     ET.register_namespace("", "http://www.w3.org/1999/xhtml")
     ET.register_namespace("epub", "http://www.idpf.org/2007/ops")
     
@@ -238,72 +326,58 @@ def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: 
     
     body = ET.SubElement(html, "body")
     
-    id_counter = 1
-    last_section = None
-    
-    for item in audio_data:
-        filename = item["filename"]
-        base_name, _ = os.path.splitext(filename)
-        
-        # Remove 3-digit prefix (e.g. "003 ")
-        clean_name = re.sub(r"^\d{3}\s+", "", base_name).strip()
-        
-        if "docTitle" in clean_name:
-            title_text = clean_name.replace("docTitle", "").strip()
-            ET.SubElement(body, "h1", {
-                "id": f"hix{id_counter:05d}",
-                "class": "docTitle"
-            }).text = title_text
-            id_counter += 1
-        elif "docAuthor" in clean_name:
-            author_text = clean_name.replace("docAuthor", "").strip()
-            ET.SubElement(body, "h1", {
-                "id": f"hix{id_counter:05d}",
-                "class": "docAuthor"
-            }).text = author_text
-            id_counter += 1
-        elif "annotation" in clean_name:
-            annot_text = clean_name.replace("annotation", "").strip()
-            ET.SubElement(body, "h1", {
-                "id": f"hix{id_counter:05d}",
-                "class": "annotation"
-            }).text = annot_text
-            id_counter += 1
-        else:
-            # Check for section-article separators: en-dash, em-dash, or standard hyphen
-            parts = re.split(r"\s+[\u2013\u2014\-]\s+", clean_name, maxsplit=1)
-            if len(parts) == 2:
-                section_title = parts[0].strip()
-                article_title = parts[1].strip()
-                
-                if section_title != last_section:
-                    ET.SubElement(body, "h1", {
-                        "id": f"hix{id_counter:05d}"
-                    }).text = section_title
-                    id_counter += 1
-                    last_section = section_title
-                    
-                ET.SubElement(body, "h2", {
-                    "id": f"hix{id_counter:05d}",
-                    "class": "article"
-                }).text = article_title
-                id_counter += 1
-            else:
-                # Standalone article
-                ET.SubElement(body, "h1", {
-                    "id": f"hix{id_counter:05d}",
-                    "class": "article"
-                }).text = clean_name
-                id_counter += 1
+    headings = _parse_headings(audio_data)
+    for h in headings:
+        attrs = {"id": h["id"]}
+        if h["class"]:
+            attrs["class"] = h["class"]
+            
+        elem = ET.SubElement(body, h["tag"], attrs)
+        elem.text = h["text"]
                 
     os.makedirs(output_dir, exist_ok=True)
     xhtml_path = os.path.join(output_dir, "Document.xhtml")
     
-    # Write file out
     tree = ET.ElementTree(html)
     tree.write(xhtml_path, encoding="UTF-8", xml_declaration=True)
     
     return xhtml_path
+
+
+def generate_nav_points_node(audio_data: list[dict]) -> ET.Element:
+    """
+    Generates the <NavPoints> XML block for the .nhsx document,
+    containing two <NavPoint> elements per heading to define boundaries.
+    
+    Args:
+        audio_data: List of dicts containing 'filename' and 'duration' (in ms).
+        
+    Returns:
+        An xml.etree.ElementTree.Element representing the <NavPoints> node.
+    """
+    headings = _parse_headings(audio_data)
+    nav_points = ET.Element("NavPoints")
+    
+    for h in headings:
+        start_ms = h["start_sec"] * 1000.0
+        end_ms = start_ms + 3000.0  # Add exactly 3.000s placeholder offset
+        
+        begin_str = format_duration_hhmmss_mmm(start_ms)
+        end_str = format_duration_hhmmss_mmm(end_ms)
+        
+        # ClipBegin boundary
+        ET.SubElement(nav_points, "NavPoint", {
+            "Id": h["id"],
+            "Begin": begin_str
+        })
+        # ClipEnd boundary (placeholder)
+        ET.SubElement(nav_points, "NavPoint", {
+            "Id": h["id"],
+            "Begin": end_str
+        })
+        
+    return nav_points
+
 
 
 
