@@ -1,6 +1,8 @@
 import os
 import tempfile
+import xml.etree.ElementTree as ET
 from src.core.xml_generator import write_boilerplate_css, DAISY_BOILERPLATE_CSS
+
 
 def test_write_boilerplate_css():
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -219,6 +221,48 @@ def test_generate_nav_points_node():
     assert navs[6].get("Begin") == "00:00:15.000"
     assert navs[7].get("Id") == "hix00004"
     assert navs[7].get("Begin") == "00:00:18.000"
+
+def test_compile_hindenburg_session():
+    from src.core.xml_generator import compile_hindenburg_session
+    
+    metadata = {
+        "copyright": "Restricted",
+        "title": "Compiled Magazine",
+        "producer": "Producer unit test",
+        "recording_agency": "Agency unit test"
+    }
+    
+    audio_data = [
+        {"filename": "001 docTitle Title.wav", "absolute_path": "/path/001.wav", "duration": 10000.0},
+        {"filename": "002 docAuthor Author Name.wav", "absolute_path": "/path/002.wav", "duration": 5000.0}
+    ]
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        nhsx_path = compile_hindenburg_session(audio_data, metadata, tmpdir, "mag_proj")
+        assert os.path.exists(nhsx_path)
+        assert os.path.basename(nhsx_path) == "mag_proj.nhsx"
+        
+        # Verify XML structure compiles and contains correct elements
+        tree = ET.parse(nhsx_path)
+        root = tree.getroot()
+        assert root.tag == "Session"
+        assert root.get("Version") == "Narrator Studio 1.60"
+        
+        info = root.find("Info")
+        assert info is not None
+        assert info.get("Title") == "Compiled Magazine"
+        assert info.get("Producer") == "Producer unit test"
+        
+        audio_pool = root.find("AudioPool")
+        assert audio_pool is not None
+        assert len(list(audio_pool)) == 2
+        
+        tracks = root.find("Tracks")
+        assert tracks is not None
+        
+        navs = root.find("NavPoints")
+        assert navs is not None
+
 
 
 

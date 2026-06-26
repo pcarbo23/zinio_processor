@@ -379,6 +379,98 @@ def generate_nav_points_node(audio_data: list[dict]) -> ET.Element:
     return nav_points
 
 
+def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_dir: str, project_name: str) -> str:
+    """
+    Compiles the complete Hindenburg session (.nhsx) XML file by combining Info,
+    AudioPool, Tracks, Clipboard, Markers, Document, TextItems, NavPoints, and Config elements.
+    
+    Args:
+        audio_data: List of dicts containing filename, absolute_path, and duration (in ms).
+        metadata: Dict containing project metadata.
+        output_dir: The target output directory where the .nhsx file will be written.
+        project_name: The name of the project.
+        
+    Returns:
+        The absolute path to the compiled .nhsx session file.
+    """
+    import datetime
+    
+    session = ET.Element("Session", {
+        "Version": "Narrator Studio 1.60",
+        "Samplerate": "44100",
+        "Time": "00.000"
+    })
+    
+    # 1. Info node
+    today_str = datetime.date.today().isoformat()
+    info_attrs = {
+        "Copyright": metadata.get("copyright", "Further reproduction or distribution in other than an accessible format is prohibited"),
+        "Revision": metadata.get("revision", "0"),
+        "Language": metadata.get("language", "en"),
+        "MultimediaType": "audioNCX",
+        "Title": metadata.get("title", project_name),
+        "Producer": metadata.get("producer", "NLS Media Lab"),
+        "RecordingAgency": metadata.get("recording_agency", "Zinio Inc."),
+        "ProducedDate": metadata.get("produced_date", today_str),
+        "SourceDate": metadata.get("source_date", today_str)
+    }
+    ET.SubElement(session, "Info", info_attrs)
+    
+    # 2. AudioPool node
+    audio_pool = generate_audio_pool_node(audio_data, project_name, output_dir)
+    session.append(audio_pool)
+    
+    # 3. Tracks node
+    tracks = generate_tracks_node(audio_data)
+    session.append(tracks)
+    
+    # 4. Clipboard node (boilerplate)
+    clipboard = ET.SubElement(session, "Clipboard")
+    ET.SubElement(clipboard, "Group", {"Caption": "Group 1"})
+    ET.SubElement(clipboard, "Group", {"Caption": "Group 2"})
+    ET.SubElement(clipboard, "Group", {"Caption": "Group 3"})
+    ET.SubElement(clipboard, "Group", {"Caption": "Group 4"})
+    
+    # 5. Markers node (boilerplate)
+    ET.SubElement(session, "Markers")
+    
+    # 6. Document link node
+    ET.SubElement(session, "Document", {"File": "Document.xhtml"})
+    
+    # 7. TextItems node
+    text_items = get_static_text_items()
+    session.append(text_items)
+    
+    # 8. NavPoints node
+    nav_points = generate_nav_points_node(audio_data)
+    session.append(nav_points)
+    
+    # 9. Config node (boilerplate)
+    config = ET.SubElement(session, "Config", {"Name": "Config"})
+    book_export = ET.SubElement(config, "BookExport")
+    ET.SubElement(book_export, "Z3986", {
+        "SplitTime": "90", "AudioEncoding": "Mono", "SplitLevel": "1",
+        "AudioFormat": "AMR-WBP", "WAVCopy": "0", "HeadingsFile": "0"
+    })
+    ET.SubElement(book_export, "Daisy2.02", {
+        "AudioFormat": "MP3", "SplitLevel": "1", "AudioEncoding": "Low Quality"
+    })
+    ET.SubElement(book_export, "ePub3", {
+        "AudioFormat": "MP3", "SplitLevel": "1", "AudioEncoding": "Low Quality"
+    })
+    
+    # Write NHSX to target directory
+    os.makedirs(output_dir, exist_ok=True)
+    nhsx_filename = f"{project_name}.nhsx"
+    nhsx_path = os.path.join(output_dir, nhsx_filename)
+    
+    tree = ET.ElementTree(session)
+    tree.write(nhsx_path, encoding="UTF-8", xml_declaration=True)
+    
+    return nhsx_path
+
+
+
 
 
 
