@@ -50,3 +50,28 @@ def test_worker_execution_flow():
              
              # Verify signal emits
              mock_finished.assert_called_with(True, "Project compiled successfully.")
+
+def test_worker_failure_flow():
+    with patch("src.gui.worker.APIManager") as mock_api_mgr:
+        # Simulate authentication failure
+        mgr_instance = MagicMock()
+        mgr_instance.get_session_token.side_effect = RuntimeError("Auth server is offline")
+        mock_api_mgr.return_value = mgr_instance
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            worker = AutomatorWorker(
+                api_url="https://httpbin.org/post",
+                username="user",
+                password="pwd",
+                project_name="mag_name",
+                output_dir=tmpdir
+            )
+            
+            mock_finished = MagicMock()
+            worker.finished_signal.connect(mock_finished)
+            
+            worker.run()
+            
+            # Should have failed
+            mock_finished.assert_called_with(False, "Auth server is offline")
+            assert worker.logger.api_status == "FAILED (Auth server is offline)"

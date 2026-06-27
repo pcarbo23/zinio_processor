@@ -100,6 +100,7 @@ class AutomatorWorker(QThread):
             
         except Exception as e:
             tb = traceback.format_exc()
+            self.logger.set_api_info(self.api_url, f"FAILED ({str(e)})")
             self.logger.log(f"Execution failed: {str(e)}\n{tb}", "ERROR")
             self.log_signal.emit(f"[ERROR] Execution failed: {str(e)}")
             self.logger.set_task_status("Overall Process", False, str(e))
