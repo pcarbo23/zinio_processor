@@ -326,9 +326,11 @@ def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: 
     body = ET.SubElement(html, "body")
     
     headings = _parse_headings(audio_data)
-    for h in headings:
+    for i, h in enumerate(headings):
         attrs = {"id": h["id"]}
-        if h["class"]:
+        if i == 0:
+            attrs["class"] = "docTitle"
+        elif h["class"]:
             attrs["class"] = h["class"]
             
         elem = ET.SubElement(body, h["tag"], attrs)
@@ -437,7 +439,11 @@ def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_di
     ET.SubElement(session, "Markers")
     
     # 6. Document link node
-    ET.SubElement(session, "Document", {"File": f"{project_name} Files/Document.xhtml"})
+    xhtml_full_path = os.path.abspath(os.path.join(output_dir, f"{project_name} Files", "Document.xhtml"))
+    ET.SubElement(session, "Document", {
+        "File": "Document.xhtml",
+        "DocPath": xhtml_full_path
+    })
     
     # 7. TextItems node
     text_items = get_static_text_items()

@@ -275,7 +275,8 @@ def test_compile_hindenburg_session():
         
         doc_node = root.find("Document")
         assert doc_node is not None
-        assert doc_node.get("File") == "mag_proj Files/Document.xhtml"
+        assert doc_node.get("File") == "Document.xhtml"
+        assert doc_node.get("DocPath") == os.path.abspath(os.path.join(tmpdir, "mag_proj Files", "Document.xhtml"))
 
 
 
