@@ -7,9 +7,9 @@ import io
 
 class MockDownloader:
     """
-    Downloads project ZIP payload from API. Since we are in mockup phase,
-    this queries httpbin.org and unpacks a set of dynamically generated mock
-    WAV files directly to the output directory to simulate unzipping.
+    Downloads project ZIP payload from API. Supports real ZIP download
+    and extraction if a real endpoint is provided, falling back to
+    simulating/generating mock WAV files.
     """
     def __init__(self, logger=None):
         self.logger = logger
@@ -21,12 +21,54 @@ class MockDownloader:
     def fetch_and_unpack(self, api_url: str, token: str, project_name: str, output_dir: str) -> str:
         """
         Queries the api_url with the auth token.
-        Generates mock audio files and unzips them into output_dir/<ProjectName> Files/
+        If the endpoint is a real API or local mock server, downloads and extracts the real ZIP.
+        Otherwise, falls back to generating local mock WAV files.
         """
         self.log(f"Fetching ZIP URL from API endpoint: {api_url}")
         
-        # Call mock API using HTTPBin
-        headers = {"Authorization": f"Bearer {token}"}
+        # Determine if we should perform a real ZIP download
+        is_real_download = ("127.0.0.1" in api_url or "localhost" in api_url or "/content" in api_url)
+        
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        # Create output directories
+        project_files_dir = os.path.join(output_dir, f"{project_name} Files")
+        os.makedirs(project_files_dir, exist_ok=True)
+        self.log(f"Created project files output directory: {project_files_dir}")
+
+        if is_real_download:
+            try:
+                self.log("Performing real ZIP download...")
+                response = requests.get(api_url, headers=headers, timeout=30)
+                response.raise_for_status()
+                self.log(f"Successfully downloaded ZIP payload. Content size: {len(response.content)} bytes.")
+                
+                # Unpack the downloaded zip file directly to output directory
+                with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+                    # Hindenburg requires unzipped wav files directly inside "<ProjectName> Files"
+                    # So we extract them there. If the zip contains a nested folder, we flatten it.
+                    for member in zip_ref.infolist():
+                        if member.is_dir():
+                            continue
+                        # Flatten the directory structure by using the basename
+                        filename = os.path.basename(member.filename)
+                        if not filename:
+                            continue
+                        target_path = os.path.join(project_files_dir, filename)
+                        with zip_ref.open(member) as source, open(target_path, "wb") as target:
+                            target.write(source.read())
+                        self.log(f"Extracted file: {filename}")
+                        
+                self.log("ZIP unpack extraction completed successfully.")
+                return project_files_dir
+                
+            except Exception as e:
+                self.log(f"Real ZIP download/unpack failed: {str(e)}", "ERROR")
+                raise RuntimeError(f"Failed to query real API: {str(e)}")
+
+        # Fallback Mock logic
         try:
             response = requests.get("https://httpbin.org/headers", headers=headers, timeout=10)
             response.raise_for_status()
@@ -34,11 +76,6 @@ class MockDownloader:
         except Exception as e:
             self.log(f"API request failed: {str(e)}", "ERROR")
             raise RuntimeError(f"Failed to query API: {str(e)}")
-
-        # Create output directories
-        project_files_dir = os.path.join(output_dir, f"{project_name} Files")
-        os.makedirs(project_files_dir, exist_ok=True)
-        self.log(f"Created project files output directory: {project_files_dir}")
 
         # Generate a list of mockup WAV filenames conforming to the spec
         mock_files = [
@@ -76,9 +113,7 @@ class MockDownloader:
             frames = bytearray(num_samples * 2)
             
             for i in range(num_samples):
-                # Calculate sine wave value
                 val = int(amplitude * math.sin(2.0 * math.pi * frequency * i / sample_rate))
-                # pack as signed 16-bit little endian
                 frames[2*i] = val & 0xFF
                 frames[2*i+1] = (val >> 8) & 0xFF
                 

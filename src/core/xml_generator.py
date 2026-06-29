@@ -35,6 +35,7 @@ def write_boilerplate_css(output_dir: str) -> str:
 
 
 import xml.etree.ElementTree as ET
+from src.utils.time_formatter import format_hindenburg_time
 
 STATIC_TEXT_ITEMS_XML = """<TextItems>
   <TextItem Name="Title" State="1" Key="1">
@@ -152,7 +153,7 @@ def generate_audio_pool_node(audio_data: list[dict], project_name: str, output_d
         abs_path = item["absolute_path"]
         duration_ms = item["duration"]
         
-        duration_str = format_duration_hhmmss_mmm(duration_ms)
+        duration_str = format_hindenburg_time(duration_ms)
         
         ET.SubElement(audio_pool, "File", {
             "Id": str(idx),
@@ -176,27 +177,25 @@ def generate_tracks_node(audio_data: list[dict]) -> ET.Element:
     Returns:
         An xml.etree.ElementTree.Element representing the <Tracks> node.
     """
-    from src.utils.time_formatter import format_hindenburg_time
-    
     tracks = ET.Element("Tracks")
     track = ET.SubElement(tracks, "Track", {"Name": "Narration"})
     
-    cumulative_seconds = 0.0
+    cumulative_ms = 0.0
     for idx, item in enumerate(audio_data, start=1):
         filename = item["filename"]
         # Use filename without extension as Region Name
         region_name, _ = os.path.splitext(filename)
-        duration_sec = item["duration"] / 1000.0
+        duration_ms = item["duration"]
         
         region_attrs = {
             "Ref": str(idx),
             "Name": region_name,
-            "Start": format_hindenburg_time(cumulative_seconds),
-            "Length": format_hindenburg_time(duration_sec)
+            "Start": format_hindenburg_time(cumulative_ms),
+            "Length": format_hindenburg_time(duration_ms)
         }
         
         ET.SubElement(track, "Region", region_attrs)
-        cumulative_seconds += duration_sec
+        cumulative_ms += duration_ms
         
     return tracks
 
@@ -339,7 +338,10 @@ def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: 
     xhtml_path = os.path.join(output_dir, "Document.xhtml")
     
     tree = ET.ElementTree(html)
-    tree.write(xhtml_path, encoding="UTF-8", xml_declaration=True)
+    ET.indent(tree, space="  ", level=0)
+    with open(xhtml_path, "wb") as f:
+        f.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
+        tree.write(f, encoding="UTF-8", xml_declaration=False, method="xml")
     
     return xhtml_path
 
@@ -362,8 +364,8 @@ def generate_nav_points_node(audio_data: list[dict]) -> ET.Element:
         start_ms = h["start_sec"] * 1000.0
         end_ms = start_ms + 3000.0  # Add exactly 3.000s placeholder offset
         
-        begin_str = format_duration_hhmmss_mmm(start_ms)
-        end_str = format_duration_hhmmss_mmm(end_ms)
+        begin_str = format_hindenburg_time(start_ms)
+        end_str = format_hindenburg_time(end_ms)
         
         # ClipBegin boundary
         ET.SubElement(nav_points, "NavPoint", {
@@ -398,7 +400,7 @@ def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_di
     session = ET.Element("Session", {
         "Version": "Narrator Studio 1.60",
         "Samplerate": "44100",
-        "Time": "00.000"
+        "Time": format_hindenburg_time(0.0)
     })
     
     # 1. Info node
@@ -435,7 +437,7 @@ def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_di
     ET.SubElement(session, "Markers")
     
     # 6. Document link node
-    ET.SubElement(session, "Document", {"File": "Document.xhtml"})
+    ET.SubElement(session, "Document", {"File": f"{project_name} Files/Document.xhtml"})
     
     # 7. TextItems node
     text_items = get_static_text_items()
@@ -465,7 +467,10 @@ def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_di
     nhsx_path = os.path.join(output_dir, nhsx_filename)
     
     tree = ET.ElementTree(session)
-    tree.write(nhsx_path, encoding="UTF-8", xml_declaration=True)
+    ET.indent(tree, space="  ", level=0)
+    with open(nhsx_path, "wb") as f:
+        f.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
+        tree.write(f, encoding="UTF-8", xml_declaration=False, method="xml")
     
     return nhsx_path
 

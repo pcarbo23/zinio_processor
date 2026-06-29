@@ -4,11 +4,21 @@ import pytest
 from src.core.downloader import MockDownloader
 from src.utils.logger import ProcessLogger
 
+from unittest.mock import patch, MagicMock
+
 def test_mock_downloader():
     logger = ProcessLogger()
     downloader = MockDownloader(logger=logger)
     
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir, \
+         patch("requests.get") as mock_get:
+        
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b""
+        mock_get.return_value = mock_response
+        
         files_dir = downloader.fetch_and_unpack(
             api_url="https://httpbin.org/get",
             token="dummy_token",

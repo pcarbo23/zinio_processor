@@ -77,14 +77,14 @@ class AutomatorWorker(QThread):
             # 4. XML Project generation & static assets writes
             self.status_signal.emit("Status: Compiling Hindenburg Session...")
             self.log_signal.emit("Writing style.css stylesheet...")
-            write_boilerplate_css(self.output_dir)
+            write_boilerplate_css(audio_files_dir)
             
             self.log_signal.emit("Generating Document.xhtml flow...")
             metadata = {
                 "title": self.project_name,
                 "creator": self.username
             }
-            generate_document_xhtml(audio_data, metadata, self.output_dir)
+            generate_document_xhtml(audio_data, metadata, audio_files_dir)
             
             self.log_signal.emit("Generating Session.nhsx timeline project...")
             compile_hindenburg_session(audio_data, metadata, self.output_dir, self.project_name)

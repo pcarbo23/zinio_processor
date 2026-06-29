@@ -44,8 +44,8 @@ def test_worker_execution_flow():
              mgr_instance.store_credentials.assert_called_with("pwd")
              dl_instance.fetch_and_unpack.assert_called_with("https://httpbin.org/post", "token123", "mag_name", tmpdir)
              mock_parser.assert_called_once()
-             mock_css.assert_called_with(tmpdir)
-             mock_xhtml.assert_called_once()
+             mock_css.assert_called_with("/tmp/mag_files")
+             mock_xhtml.assert_called_with([], {"title": "mag_name", "creator": "user"}, "/tmp/mag_files")
              mock_nhsx.assert_called_once()
              
              # Verify signal emits

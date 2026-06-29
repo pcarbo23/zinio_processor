@@ -1,38 +1,36 @@
-def format_hindenburg_time(seconds: float) -> str:
+def format_hindenburg_time(total_milliseconds: float) -> str:
     """
-    Converts float seconds to Hindenburg Narrator XML timing format.
+    Converts float or int milliseconds to Hindenburg Narrator XML timing format.
     
     Rules:
-    - Under 60s: SS.SSS (zero-padded to 2 digits for seconds, e.g., 00.000, 19.480)
-    - 60s to 3600s: MM:SS.SSS (zero-padded to 2 digits for minutes and seconds, e.g., 04:24.199)
-    - 3600s and above: H:MM:SS.SSS (hours are not padded, e.g., 1:11:02.061)
+    - Under 1 minute (60,000 ms): SS.mmm (e.g., 06.827 or 45.000). Do not include colons or minutes.
+    - >= 1 minute but < 1 hour: MM:SS.mmm (e.g., 01:22.784 or 45:12.100).
+    - >= 1 hour: H:MM:SS.mmm with no leading zero on the hour (e.g., 1:01:19.973).
     
     Args:
-        seconds: Time in float seconds.
+        total_milliseconds: Time in milliseconds.
         
     Returns:
         Hindenburg timing format string.
     """
-    if seconds < 0:
-        raise ValueError("Time seconds cannot be negative")
+    if total_milliseconds < 0:
+        raise ValueError("Time milliseconds cannot be negative")
         
-    # Get milliseconds by rounding the fractional part
-    fractional, integral = (seconds - int(seconds)), int(seconds)
-    milliseconds = int(round(fractional * 1000))
+    # Round to nearest millisecond first
+    rounded_ms = int(round(total_milliseconds))
     
-    # Handle rounding carry-over (e.g. 59.9999 -> 60.000)
-    if milliseconds >= 1000:
-        integral += 1
-        milliseconds -= 1000
-
-    if integral < 60:
-        return f"{integral:02d}.{milliseconds:03d}"
-        
-    minutes = (integral // 60) % 60
-    secs = integral % 60
-    hours = integral // 3600
+    ms = rounded_ms % 1000
+    total_seconds = rounded_ms // 1000
     
-    if hours > 0:
-        return f"{hours}:{minutes:02d}:{secs:02d}.{milliseconds:03d}"
+    if rounded_ms < 60000:
+        return f"{total_seconds:02d}.{ms:03d}"
+    elif rounded_ms < 3600000:
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        return f"{minutes:02d}:{seconds:02d}.{ms:03d}"
     else:
-        return f"{minutes:02d}:{secs:02d}.{milliseconds:03d}"
+        hours = total_seconds // 3600
+        minutes = (total_seconds // 60) % 60
+        seconds = total_seconds % 60
+        return f"{hours}:{minutes:02d}:{seconds:02d}.{ms:03d}"
+

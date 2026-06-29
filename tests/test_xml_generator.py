@@ -60,13 +60,13 @@ def test_generate_audio_pool_node():
     assert files[0].get("Id") == "1"
     assert files[0].get("Name") == "001.wav"
     assert files[0].get("OriginalPath") == "/path/to/001.wav"
-    assert files[0].get("Duration") == "00:00:10.000"
+    assert files[0].get("Duration") == "10.000"
     
     assert files[1].tag == "File"
     assert files[1].get("Id") == "2"
     assert files[1].get("Name") == "002.wav"
     assert files[1].get("OriginalPath") == "/path/to/002.wav"
-    assert files[1].get("Duration") == "00:01:30.000"
+    assert files[1].get("Duration") == "01:30.000"
 
 def test_generate_tracks_node():
     from src.core.xml_generator import generate_tracks_node
@@ -130,6 +130,11 @@ def test_generate_document_xhtml():
         xhtml_path = generate_document_xhtml(audio_data, metadata, tmpdir)
         assert os.path.exists(xhtml_path)
         assert os.path.basename(xhtml_path) == "Document.xhtml"
+        
+        # Verify the XML declaration format uses double quotes
+        with open(xhtml_path, "r", encoding="utf-8") as f:
+            first_line = f.readline().strip()
+        assert first_line == '<?xml version="1.0" encoding="UTF-8"?>'
         
         # Parse output file to verify tags
         tree = ET.parse(xhtml_path)
@@ -198,29 +203,29 @@ def test_generate_nav_points_node():
     assert len(navs) == 8
     
     # Assert they are grouped consecutively
-    # Title (hix00001) starts at 0.0s (00:00:00.000)
+    # Title (hix00001) starts at 0.0s (00.000)
     assert navs[0].get("Id") == "hix00001"
-    assert navs[0].get("Begin") == "00:00:00.000"
+    assert navs[0].get("Begin") == "00.000"
     assert navs[1].get("Id") == "hix00001"
-    assert navs[1].get("Begin") == "00:00:03.000"
+    assert navs[1].get("Begin") == "03.000"
     
-    # Author (hix00002) starts at 10.0s (00:00:10.000)
+    # Author (hix00002) starts at 10.0s (10.000)
     assert navs[2].get("Id") == "hix00002"
-    assert navs[2].get("Begin") == "00:00:10.000"
+    assert navs[2].get("Begin") == "10.000"
     assert navs[3].get("Id") == "hix00002"
-    assert navs[3].get("Begin") == "00:00:13.000"
+    assert navs[3].get("Begin") == "13.000"
     
-    # World News (hix00003) starts at 15.0s (00:00:15.000)
+    # World News (hix00003) starts at 15.0s (15.000)
     assert navs[4].get("Id") == "hix00003"
-    assert navs[4].get("Begin") == "00:00:15.000"
+    assert navs[4].get("Begin") == "15.000"
     assert navs[5].get("Id") == "hix00003"
-    assert navs[5].get("Begin") == "00:00:18.000"
+    assert navs[5].get("Begin") == "18.000"
     
-    # Europe (hix00004) starts at 15.0s (00:00:15.000)
+    # Europe (hix00004) starts at 15.0s (15.000)
     assert navs[6].get("Id") == "hix00004"
-    assert navs[6].get("Begin") == "00:00:15.000"
+    assert navs[6].get("Begin") == "15.000"
     assert navs[7].get("Id") == "hix00004"
-    assert navs[7].get("Begin") == "00:00:18.000"
+    assert navs[7].get("Begin") == "18.000"
 
 def test_compile_hindenburg_session():
     from src.core.xml_generator import compile_hindenburg_session
@@ -242,6 +247,11 @@ def test_compile_hindenburg_session():
         assert os.path.exists(nhsx_path)
         assert os.path.basename(nhsx_path) == "mag_proj.nhsx"
         
+        # Verify the XML declaration format uses double quotes
+        with open(nhsx_path, "r", encoding="utf-8") as f:
+            first_line = f.readline().strip()
+        assert first_line == '<?xml version="1.0" encoding="UTF-8"?>'
+        
         # Verify XML structure compiles and contains correct elements
         tree = ET.parse(nhsx_path)
         root = tree.getroot()
@@ -262,6 +272,10 @@ def test_compile_hindenburg_session():
         
         navs = root.find("NavPoints")
         assert navs is not None
+        
+        doc_node = root.find("Document")
+        assert doc_node is not None
+        assert doc_node.get("File") == "mag_proj Files/Document.xhtml"
 
 
 
