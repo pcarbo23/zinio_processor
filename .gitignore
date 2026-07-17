@@ -59,3 +59,31 @@ venv.bak/
 # macOS files
 .DS_Store
 
+# Local application configurations and histories
+config.json
+download_history.json
+
+# Outputs/test directories
+local_test_output/
+local_test_output_new/
+local_test_output_new1/
+real_tests/
+tmp_outs/
+*.log
+
+# Generated session files and folders
+* Files/
+*/*.nhsx
+
+# User-requested ignored test suites
+tests/
+
+# User-requested ignored markdown documentation
+api_server_developer_guide.md
+zinio_api_integration.md
+connect.md
+feed.md
+
+# User-requested ignored temporary files
+note.txt
+info_element.xml

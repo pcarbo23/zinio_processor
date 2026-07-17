@@ -260,7 +260,7 @@ def _parse_headings(audio_data: list[dict]) -> list[dict]:
                     headings.append({
                         "id": f"hix{id_counter:05d}",
                         "tag": "h1",
-                        "class": None,
+                        "class": "section",
                         "text": section_title,
                         "start_sec": cumulative_seconds
                     })
@@ -308,8 +308,8 @@ def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: 
     html = ET.Element("html", {
         "xmlns": "http://www.w3.org/1999/xhtml",
         "xmlns:epub": "http://www.idpf.org/2007/ops",
-        "xml:lang": "en",
-        "lang": "en"
+        "xml:lang": metadata.get("language", "en"),
+        "lang": metadata.get("language", "en")
     })
     
     head = ET.SubElement(html, "head")
@@ -318,7 +318,7 @@ def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: 
     ET.SubElement(head, "meta", {"name": "dc:creator", "content": metadata.get("creator", "")})
     ET.SubElement(head, "meta", {"name": "dc:identifier", "content": metadata.get("identifier", "")})
     ET.SubElement(head, "meta", {"name": "dc:format", "content": " "})
-    ET.SubElement(head, "meta", {"name": "dc:publisher", "content": metadata.get("publisher", "National Library Service for the Blind and Print Disabled, Library of Congress")})
+    ET.SubElement(head, "meta", {"name": "dc:publisher", "content": metadata.get("source_publisher") or metadata.get("publisher", "National Library Service for the Blind and Physically Handicapped, Library of Congress")})
     ET.SubElement(head, "meta", {"name": "ncc:generator", "content": metadata.get("generator", "Hindenburg ABC Studio 1.60")})
     ET.SubElement(head, "link", {"rel": "stylesheet", "type": "text/css", "href": "style.css"})
     ET.SubElement(head, "meta", {"charset": "UTF-8"})
@@ -362,8 +362,17 @@ def generate_nav_points_node(audio_data: list[dict]) -> ET.Element:
     headings = _parse_headings(audio_data)
     nav_points = ET.Element("NavPoints")
     
+    seen_start_secs = set()
     for h in headings:
-        start_ms = h["start_sec"] * 1000.0
+        start_sec = h["start_sec"]
+        if start_sec in seen_start_secs:
+            continue
+        seen_start_secs.add(start_sec)
+        
+        start_ms = start_sec * 1000.0
+        if start_sec == 0.0:
+            start_ms = 5.0
+            
         end_ms = start_ms + 3000.0  # Add exactly 3.000s placeholder offset
         
         begin_str = format_hindenburg_time(start_ms)
@@ -413,10 +422,19 @@ def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_di
         "Language": metadata.get("language", "en"),
         "MultimediaType": "audioNCX",
         "Title": metadata.get("title", project_name),
+        "Description": metadata.get("description", ""),
+        "SourceDate": metadata.get("source_date", today_str),
         "Producer": metadata.get("producer", "NLS Media Lab"),
-        "RecordingAgency": metadata.get("recording_agency", "Zinio Inc."),
+        "SourcePublisher": metadata.get("source_publisher", ""),
+        "TrackType": metadata.get("track_type", "original"),
         "ProducedDate": metadata.get("produced_date", today_str),
-        "SourceDate": metadata.get("source_date", today_str)
+        "SourceRights": metadata.get("source_rights", ""),
+        "Keywords": metadata.get("keywords", ""),
+        "RecordingAgency": metadata.get("recording_agency", "Zinio Inc."),
+        "Artist": metadata.get("artist") or "Zinio TTS Engine",
+        "BaseFile": metadata.get("basefile", ""),
+        "Identifier": metadata.get("identifier", ""),
+        "Publisher": "National Library Service for the Blind and Physically Handicapped, Library of Congress"
     }
     ET.SubElement(session, "Info", info_attrs)
     

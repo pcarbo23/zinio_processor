@@ -1,1 +1,1 @@
-# Hindenburg Automator source package
+# Zinio Media Processor source package

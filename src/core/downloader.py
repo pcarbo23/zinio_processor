@@ -18,16 +18,17 @@ class MockDownloader:
         if self.logger:
             self.logger.log(message, level)
 
-    def fetch_and_unpack(self, api_url: str, token: str, project_name: str, output_dir: str) -> str:
+    def fetch_and_unpack(self, api_url: str, token: str, project_name: str, output_dir: str, newsstand_id: str = None, issue_id: str = None, feed_id: str = None) -> str:
         """
         Queries the api_url with the auth token.
-        If the endpoint is a real API or local mock server, downloads and extracts the real ZIP.
+        If newsstand_id, issue_id, and feed_id are provided, retrieves the download URL from the feed endpoint,
+        then downloads and extracts the real ZIP.
         Otherwise, falls back to generating local mock WAV files.
         """
         self.log(f"Fetching ZIP URL from API endpoint: {api_url}")
         
         # Determine if we should perform a real ZIP download
-        is_real_download = ("127.0.0.1" in api_url or "localhost" in api_url or "/content" in api_url)
+        is_real_download = ("127.0.0.1" in api_url or "localhost" in api_url or "/content" in api_url or (newsstand_id and issue_id))
         
         headers = {}
         if token:
@@ -40,8 +41,46 @@ class MockDownloader:
 
         if is_real_download:
             try:
-                self.log("Performing real ZIP download...")
-                response = requests.get(api_url, headers=headers, timeout=30)
+                download_target_url = api_url
+                if newsstand_id and issue_id and feed_id:
+                    # Target the v3 endpoint as per documentation
+                    feed_endpoint = f"{api_url}/newsstand/v3/newsstands/{newsstand_id}/issues/{issue_id}/content/feed/{feed_id}"
+                    self.log(f"Querying Feed endpoint: {feed_endpoint}")
+                    feed_resp = requests.get(feed_endpoint, headers=headers, timeout=15)
+                    
+                    if feed_resp.status_code != 200:
+                        try:
+                            err_json = feed_resp.json()
+                            self.log(f"Feed endpoint returned error JSON (Status {feed_resp.status_code}): {err_json}", "ERROR")
+                            raise RuntimeError(f"Feed endpoint error response: {err_json}")
+                        except ValueError:
+                            self.log(f"Feed endpoint returned error status {feed_resp.status_code}: {feed_resp.text}", "ERROR")
+                            feed_resp.raise_for_status()
+                        
+                    feed_data = feed_resp.json()
+                    
+                    if "data" in feed_data and isinstance(feed_data["data"], dict) and "url" in feed_data["data"]:
+                        download_target_url = feed_data["data"]["url"]
+                    elif "download_url" in feed_data:
+                        download_target_url = feed_data["download_url"]
+                    else:
+                        raise RuntimeError(f"Feed response did not return a valid download URL: {feed_data}")
+                    display_url = download_target_url
+                    if "com.ziniopro.console.ore.prod.storage" in display_url:
+                        idx = display_url.find("com.ziniopro.console.ore.prod.storage/")
+                        if idx != -1:
+                            display_url = display_url[:idx + len("com.ziniopro.console.ore.prod.storage/")]
+                    self.log(f"Resolved download URL from feed: {display_url}")
+
+                display_url = download_target_url
+                if "com.ziniopro.console.ore.prod.storage" in display_url:
+                    idx = display_url.find("com.ziniopro.console.ore.prod.storage/")
+                    if idx != -1:
+                        display_url = display_url[:idx + len("com.ziniopro.console.ore.prod.storage/")]
+                self.log(f"Performing ZIP download from: {display_url}")
+                # Omit Authorization header for Amazon S3 pre-signed URLs to prevent 400 Bad Request
+                download_headers = {} if "amazonaws.com" in download_target_url else headers
+                response = requests.get(download_target_url, headers=download_headers, timeout=60)
                 response.raise_for_status()
                 self.log(f"Successfully downloaded ZIP payload. Content size: {len(response.content)} bytes.")
                 
@@ -65,17 +104,8 @@ class MockDownloader:
                 return project_files_dir
                 
             except Exception as e:
-                self.log(f"Real ZIP download/unpack failed: {str(e)}", "ERROR")
-                raise RuntimeError(f"Failed to query real API: {str(e)}")
-
-        # Fallback Mock logic
-        try:
-            response = requests.get("https://httpbin.org/headers", headers=headers, timeout=10)
-            response.raise_for_status()
-            self.log(f"API metadata request successful. Status code: {response.status_code}")
-        except Exception as e:
-            self.log(f"API request failed: {str(e)}", "ERROR")
-            raise RuntimeError(f"Failed to query API: {str(e)}")
+                self.log(f"ZIP download/unpack failed: {str(e)}", "ERROR")
+                raise RuntimeError(f"Failed to query API: {str(e)}")
 
         # Generate a list of mockup WAV filenames conforming to the spec
         mock_files = [

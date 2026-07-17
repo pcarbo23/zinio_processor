@@ -1,7 +1,7 @@
 [project]
 name = "zinio_processor"
 version = "0.1.0"
-description = "Hindenburg Automator desktop application"
+description = "Zinio Media Processor desktop application"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

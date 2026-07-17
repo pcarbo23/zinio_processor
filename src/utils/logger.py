@@ -43,7 +43,7 @@ class ProcessLogger:
         
         with open(log_path, "w", encoding="utf-8") as f:
             f.write("=" * 60 + "\n")
-            f.write(" HINDENBURG AUTOMATOR EXECUTION LOG\n")
+            f.write(" ZINIO MEDIA PROCESSOR EXECUTION LOG\n")
             f.write("=" * 60 + "\n")
             f.write(f"Execution Date/Time (Local): {datetime.datetime.now().isoformat()}\n")
             f.write(f"Operating System:            {self.os_info}\n")
