@@ -159,7 +159,7 @@ class MainWindow(QMainWindow):
         self.browse_btn.clicked.connect(self.browse_output_dir)
         self.browse_btn.setFixedWidth(160)
         
-        self.fetch_btn = QPushButton("Fetch & Generate")
+        self.fetch_btn = QPushButton("Fetch && Generate")
         self.fetch_btn.clicked.connect(self.start_process)
         self.fetch_btn.setFixedWidth(160)
 
