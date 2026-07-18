@@ -7,7 +7,7 @@ a = Analysis(
     pathex=['.'],
     binaries=[],
     datas=[
-        ('icon_concept1.png', '.'),
+        ('icon_concept1.ico', '.'),
     ],
     hiddenimports=[],
     hookspath=[],
@@ -87,5 +87,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='icon_concept1.png',  # Embed the icon in the executable file
+    icon='icon_concept1.ico',  # Embed the icon in the executable file
 )
