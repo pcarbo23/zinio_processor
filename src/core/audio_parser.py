@@ -13,6 +13,7 @@ def get_audio_duration_seconds(file_path: str) -> float:
     Returns:
         Duration as a float in seconds.
     """
+    file_path = os.path.normpath(file_path)
     cmd = [
         "ffprobe",
         "-v", "error",
@@ -33,6 +34,7 @@ def get_integrated_loudness_lufs(file_path: str) -> float:
     Returns:
         Integrated loudness in LUFS as a float.
     """
+    file_path = os.path.normpath(file_path)
     cmd = [
         "ffmpeg",
         "-i", file_path,
@@ -83,7 +85,7 @@ def parse_audio_dir(audio_dir: str, logger=None) -> list[dict]:
         logger.log(f"Found {len(files)} WAV files to parse.")
     
     for filename in files:
-        file_path = os.path.join(audio_dir, filename)
+        file_path = os.path.normpath(os.path.join(audio_dir, filename))
         
         # 1. Get exact duration in seconds, convert to milliseconds
         try:

@@ -147,7 +147,7 @@ class MainWindow(QMainWindow):
         
         self.output_dir_input = QLineEdit()
         config = load_config()
-        self.output_dir_input.setText(config.get("last_output_dir", os.getcwd()))
+        self.output_dir_input.setText(os.path.normpath(config.get("last_output_dir", os.getcwd())))
         self.output_dir_input.setFixedWidth(450)
         
         # Buttons (all equal in size, fixed width 160)
@@ -394,6 +394,7 @@ class MainWindow(QMainWindow):
             self, "Select Output Directory", self.output_dir_input.text()
         )
         if directory:
+            directory = os.path.normpath(directory)
             self.output_dir_input.setText(directory)
             config = load_config()
             config["last_output_dir"] = directory
@@ -414,7 +415,7 @@ class MainWindow(QMainWindow):
         client_id = config.get("client_id")
         
         # Save output directory preference
-        output_dir = self.output_dir_input.text().strip()
+        output_dir = os.path.normpath(self.output_dir_input.text().strip())
         config["last_output_dir"] = output_dir
         save_config(config)
         
@@ -438,7 +439,7 @@ class MainWindow(QMainWindow):
             client_id=client_id,
             client_secret=client_secret,
             project_name=self.project_name_input.text().strip(),
-            output_dir=self.output_dir_input.text().strip(),
+            output_dir=os.path.normpath(self.output_dir_input.text().strip()),
             newsstand_id=newsstand_id,
             publication_id=str(pub_id),
             issue_id=str(issue_id),

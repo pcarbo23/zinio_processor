@@ -35,7 +35,7 @@ class MockDownloader:
             headers["Authorization"] = f"Bearer {token}"
 
         # Create output directories
-        project_files_dir = os.path.join(output_dir, f"{project_name} Files")
+        project_files_dir = os.path.normpath(os.path.join(output_dir, f"{project_name} Files"))
         os.makedirs(project_files_dir, exist_ok=True)
         self.log(f"Created project files output directory: {project_files_dir}")
 
@@ -95,7 +95,7 @@ class MockDownloader:
                         filename = os.path.basename(member.filename)
                         if not filename:
                             continue
-                        target_path = os.path.join(project_files_dir, filename)
+                        target_path = os.path.normpath(os.path.join(project_files_dir, filename))
                         with zip_ref.open(member) as source, open(target_path, "wb") as target:
                             target.write(source.read())
                         self.log(f"Extracted file: {filename}")

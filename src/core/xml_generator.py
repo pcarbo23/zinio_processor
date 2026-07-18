@@ -28,7 +28,7 @@ def write_boilerplate_css(output_dir: str) -> str:
         The absolute path to the generated style.css file.
     """
     os.makedirs(output_dir, exist_ok=True)
-    css_path = os.path.join(output_dir, "style.css")
+    css_path = os.path.normpath(os.path.join(output_dir, "style.css"))
     with open(css_path, "w", encoding="utf-8") as f:
         f.write(DAISY_BOILERPLATE_CSS)
     return css_path
@@ -142,7 +142,7 @@ def generate_audio_pool_node(audio_data: list[dict], project_name: str, output_d
     Returns:
         An xml.etree.ElementTree.Element representing the <AudioPool> node.
     """
-    audio_files_dir = os.path.join(output_dir, f"{project_name} Files")
+    audio_files_dir = os.path.normpath(os.path.join(output_dir, f"{project_name} Files"))
     audio_pool = ET.Element("AudioPool", {
         "Path": f"{project_name} Files",
         "Location": audio_files_dir
@@ -337,7 +337,7 @@ def generate_document_xhtml(audio_data: list[dict], metadata: dict, output_dir: 
         elem.text = h["text"]
                 
     os.makedirs(output_dir, exist_ok=True)
-    xhtml_path = os.path.join(output_dir, "Document.xhtml")
+    xhtml_path = os.path.normpath(os.path.join(output_dir, "Document.xhtml"))
     
     tree = ET.ElementTree(html)
     ET.indent(tree, space="  ", level=0)
@@ -457,7 +457,7 @@ def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_di
     ET.SubElement(session, "Markers")
     
     # 6. Document link node
-    xhtml_full_path = os.path.abspath(os.path.join(output_dir, f"{project_name} Files", "Document.xhtml"))
+    xhtml_full_path = os.path.normpath(os.path.abspath(os.path.join(output_dir, f"{project_name} Files", "Document.xhtml")))
     ET.SubElement(session, "Document", {
         "File": "Document.xhtml",
         "DocPath": xhtml_full_path
@@ -488,7 +488,7 @@ def compile_hindenburg_session(audio_data: list[dict], metadata: dict, output_di
     # Write NHSX to target directory
     os.makedirs(output_dir, exist_ok=True)
     nhsx_filename = f"{project_name}.nhsx"
-    nhsx_path = os.path.join(output_dir, nhsx_filename)
+    nhsx_path = os.path.normpath(os.path.join(output_dir, nhsx_filename))
     
     tree = ET.ElementTree(session)
     ET.indent(tree, space="  ", level=0)

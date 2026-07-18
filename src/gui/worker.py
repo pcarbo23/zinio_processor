@@ -32,7 +32,7 @@ class AutomatorWorker(QThread):
         self.client_id = client_id
         self.client_secret = client_secret
         self.project_name = project_name
-        self.output_dir = output_dir
+        self.output_dir = os.path.normpath(output_dir)
         self.newsstand_id = newsstand_id
         self.publication_id = publication_id
         self.issue_id = issue_id
@@ -86,7 +86,7 @@ class AutomatorWorker(QThread):
             self.logger.set_zip_name(f"{self.project_name}.zip")
             
             # The project should always be stored in a new directory named with the same content as Basefile (i.e. self.project_name)
-            project_output_dir = os.path.join(self.output_dir, self.project_name)
+            project_output_dir = os.path.normpath(os.path.join(self.output_dir, self.project_name))
             os.makedirs(project_output_dir, exist_ok=True)
             
             audio_files_dir = downloader.fetch_and_unpack(
