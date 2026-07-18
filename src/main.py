@@ -40,7 +40,7 @@ def main():
     app.setApplicationDisplayName("Zinio Media Processor")
     
     # Set application-wide icon
-    icon_path = get_resource_path("icon_concept1.png")
+    icon_path = get_resource_path("icon_concept1.ico")
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
 

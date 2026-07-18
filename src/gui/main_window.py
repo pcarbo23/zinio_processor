@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
 
         from src.utils.resources import get_resource_path
         # Set Window Icon
-        icon_path = get_resource_path("icon_concept1.png")
+        icon_path = get_resource_path("icon_concept1.ico")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -215,7 +215,7 @@ class MainWindow(QMainWindow):
         
         from src.utils.resources import get_resource_path
         # Icon
-        icon_path = get_resource_path("icon_concept1.png")
+        icon_path = get_resource_path("icon_concept1.ico")
         if os.path.exists(icon_path):
             icon_label = QLabel()
             pixmap = QPixmap(icon_path).scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
