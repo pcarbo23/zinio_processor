@@ -1,6 +1,6 @@
-# Hindenburg Automator MVP
+# Zinio Media Processor MVP
 
-Desktop application designed to automate the creation of Hindenburg Narrator session files (`.nhsx`, `Document.xhtml`, `style.css`) for Digital Talking Books (DTBs).
+Desktop application designed to process Zinio audio magazines into Hindenburg Narrator session files (`.nhsx`, `Document.xhtml`, `style.css`) for Digital Talking Books (DTBs).
 
 ## Setup Instructions
 
