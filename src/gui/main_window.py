@@ -21,7 +21,7 @@ class PreferencesDialog(QDialog):
     """
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Preferences")
+        self.setWindowTitle("API Settings")
         self.resize(450, 250)
         
         layout = QVBoxLayout(self)
@@ -111,16 +111,17 @@ class MainWindow(QMainWindow):
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
-        # Add Menu Bar for Preferences
+        # Add Menu Bar for Settings
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
         
         settings_menu = self.menu_bar.addMenu("Settings")
-        preferences_action = settings_menu.addAction("Preferences...")
-        preferences_action.triggered.connect(self.open_preferences)
+        api_settings_action = settings_menu.addAction("API Settings...")
+        api_settings_action.triggered.connect(self.open_preferences)
         
-        about_menu = self.menu_bar.addMenu("About")
-        about_action = about_menu.addAction("About Zinio Media Processor")
+        settings_menu.addSeparator()
+        
+        about_action = settings_menu.addAction("About Zinio Media Processor")
         about_action.triggered.connect(self.show_about_dialog)
 
         # Main Central Widget
@@ -202,7 +203,7 @@ class MainWindow(QMainWindow):
     def open_preferences(self):
         dialog = PreferencesDialog(self)
         if dialog.exec() == QDialog.Accepted:
-            self.append_log("Preferences saved. Re-syncing publications...")
+            self.append_log("API Settings saved. Re-syncing publications...")
             self.load_publications()
 
     def show_about_dialog(self):
