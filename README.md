@@ -41,7 +41,7 @@ To generate a highly optimized, lean, and fast single-file executable, run:
 
 ```bash
 pyinstaller --onefile --windowed \
-  --name "HindenburgAutomator" \
+  --name "ZinioMediaProcessor" \
   --exclude-module tkinter \
   --exclude-module unittest \
   --exclude-module email \
