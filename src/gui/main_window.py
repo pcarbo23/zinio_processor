@@ -13,7 +13,7 @@ from src.utils.config import load_config, save_config, load_download_history, sa
 from src.utils.security import APIManager
 from src.utils.api_metadata import generate_basefile_value
 
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 
 class PreferencesDialog(QDialog):
     """
