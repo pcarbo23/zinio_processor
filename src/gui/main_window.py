@@ -28,10 +28,10 @@ class PreferencesDialog(QDialog):
         form_layout = QFormLayout()
         
         config = load_config()
-        server_url = config.get("server_url", "http://127.0.0.1:8000")
-        newsstand_id = config.get("newsstand_id", "3862")
-        feed_id = config.get("feed_id", "1")
-        client_id = config.get("client_id", "default_user")
+        server_url = config.get("server_url", "")
+        newsstand_id = config.get("newsstand_id", "")
+        feed_id = config.get("feed_id", "")
+        client_id = config.get("client_id", "")
         
         self.server_url_input = QLineEdit(server_url)
         self.newsstand_id_input = QLineEdit(newsstand_id)

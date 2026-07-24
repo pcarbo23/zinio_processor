@@ -1,13 +1,16 @@
 import os
 import json
 
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "config.json")
+USER_DIR = os.path.normpath(os.path.join(os.path.expanduser("~"), ".zinio_processor"))
+os.makedirs(USER_DIR, exist_ok=True)
+
+CONFIG_FILE = os.path.join(USER_DIR, "config.json")
 
 DEFAULT_CONFIG = {
-    "server_url": "http://127.0.0.1:8000",
-    "newsstand_id": "3862",
-    "feed_id": "1",
-    "client_id": "default_user"
+    "server_url": "",
+    "newsstand_id": "",
+    "feed_id": "",
+    "client_id": ""
 }
 
 def load_config():

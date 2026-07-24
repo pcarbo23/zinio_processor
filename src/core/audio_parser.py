@@ -2,6 +2,7 @@ import os
 import subprocess
 import json
 import re
+import sys
 
 def get_audio_duration_seconds(file_path: str) -> float:
     """
@@ -21,8 +22,13 @@ def get_audio_duration_seconds(file_path: str) -> float:
         "-of", "default=noprint_wrappers=1:nokey=1",
         file_path
     ]
+    startupinfo = None
+    if sys.platform == "win32":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = getattr(subprocess, "SW_HIDE", 0)
     try:
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, startupinfo=startupinfo)
         return float(result.stdout.strip())
     except FileNotFoundError:
         raise RuntimeError("ffprobe executable not found. Please ensure that ffmpeg and ffprobe are installed and added to your system's PATH environment variable.")
@@ -45,9 +51,14 @@ def get_integrated_loudness_lufs(file_path: str) -> float:
         "-f", "null",
         "-"
     ]
+    startupinfo = None
+    if sys.platform == "win32":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = getattr(subprocess, "SW_HIDE", 0)
     # ffmpeg output for filters goes to stderr
     try:
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, startupinfo=startupinfo)
     except FileNotFoundError:
         raise RuntimeError("ffmpeg executable not found. Please ensure that ffmpeg and ffprobe are installed and added to your system's PATH environment variable.")
     
